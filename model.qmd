@@ -68,6 +68,9 @@ params_22_23 <- list()
 
 # Build prediction model (N.B. 'data' is new in-year data)
 prediction_model <- function(data, params, weight){
+  # Use 'data' to update params 
+  
+  # Predict for each week, number of applicants, etc.
   
 }
 
