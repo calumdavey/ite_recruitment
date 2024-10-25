@@ -67,7 +67,39 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <script src="model_files/libs/bootstrap/bootstrap.min.js"></script>
 <link href="model_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
 <link href="model_files/libs/bootstrap/bootstrap.min.css" rel="stylesheet" id="quarto-bootstrap" data-mode="light">
+<script src="model_files/libs/quarto-diagram/mermaid.min.js"></script>
+<script src="model_files/libs/quarto-diagram/mermaid-init.js"></script>
+<link href="model_files/libs/quarto-diagram/mermaid.css" rel="stylesheet">
 
+  <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN") {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
 
 </head>
 
@@ -75,7 +107,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 <div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
 <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
-<div class="quarto-alternate-formats"><h2>Other Formats</h2><ul><li><a href="model.pdf"><i class="bi bi-file-pdf"></i>PDF</a></li></ul></div></div>
+</div>
 <main class="content page-columns page-full" id="quarto-document-content">
 
 <header id="title-block-header" class="quarto-title-block default">
@@ -104,58 +136,271 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="defining-the-model" class="level2 page-columns page-full">
 <h2 class="anchored" data-anchor-id="defining-the-model">Defining the model</h2>
 <p>The model assumes that everyone who applies to the NIoT passes enters into a cohort with binary – probabilistic – transitions through a series of gates: being invited to interview, being offered a place, accepting the place, and starting on the course. At each gate, the applicant can either continue to the next gate or drop out of the process entirely; there is no way back into the process once someone has dropped out.</p>
-<p>The probabilities of passing through a gate are fixed for all candidates irrespective of personal characteristics.<a href="#fn2" class="footnote-ref" id="fnref2" role="doc-noteref"><sup>2</sup></a>. However, the probabilities are expected to change linearly through the year. Therefore, the five probabilities (i.e., application, interview, offer, accept, start) are defined by two parameters: an intercept and a slope.</p>
-<div class="no-row-height column-margin column-container"><div id="fn2"><p><sup>2</sup>&nbsp;In previous analysis we have looked at how these differ by EAL status, and could add this feature to the model in future.</p></div><div id="fn3"><p><sup>3</sup>&nbsp;This could be improved; there is surely a model that learns how good the previous data is given the new data.</p></div></div><p>The ten parameters underlying the model are determined using data from the previous year, and updated using monthly data as it accrues in year. The weighting of in-year data (or more accurately, the weights given to the past year’s data) is determined based on the weights that gave the most accurate estimate in the previous year’s prediction in April.<a href="#fn3" class="footnote-ref" id="fnref3" role="doc-noteref"><sup>3</sup></a></p>
-<p>The model building takes three steps:</p>
+
+<div class="no-row-height column-margin column-container"><div class="">
+<div class="cell" data-layout-align="default">
+<div class="cell-output-display">
+<div>
+<p></p><figure class="figure"><p></p>
+<div>
+<pre class="mermaid mermaid-js">flowchart LR
+  A{Apply} --&gt; B(Interview)
+  B --&gt; C(Offer)
+  C --&gt; D(Accept)
+  D --&gt; E{Start}
+
+  A --&gt; F[Exit]
+  B --&gt; G[Exit]
+  C --&gt; H[Exit]
+  D --&gt; I[Exit]
+</pre>
+</div>
+<p></p><figcaption> Flow diagram of the process.</figcaption> </figure><p></p>
+</div>
+</div>
+</div>
+</div><div id="fn2"><p><sup>2</sup>&nbsp;In previous analysis we have looked at how these differ by EAL status, and could add this feature to the model in future.</p></div></div><p>The probabilities of passing through a gate are fixed for all candidates irrespective of personal characteristics.<a href="#fn2" class="footnote-ref" id="fnref2" role="doc-noteref"><sup>2</sup></a>. However, the probabilities are expected to change linearly through the year. Therefore, the five probabilities (i.e., application, interview, offer, accept, start) are defined by two parameters: an intercept and a slope.</p>
+<p>The ten parameters underlying the model are determined using data from the previous year, and updated using monthly data as it accrues in year. The weighting of in-year data (or more accurately, the weights given to the past year’s data) is determined based on the weights that gave the most accurate estimate in the previous year’s prediction in April.<a href="#fn3" class="footnote-ref" id="fnref3" role="doc-noteref"><sup>3</sup></a></p>
+<div class="no-row-height column-margin column-container"><div id="fn3"><p><sup>3</sup>&nbsp;This could be improved; there is surely a model that learns how good the previous data is given the new data.</p></div></div><p>The model building takes three steps:</p>
 <ol type="1">
-<li>Estimating the parameters underlying the probabilities from 23-24 data.</li>
 <li>Determining the optimal weights using a 23-24-prediction model imagined from April 2024.</li>
+<li>Estimating the parameters underlying the probabilities from 23-24 data.</li>
 <li>Building a prediction model for 24-25 that incorporates new data as it arises.</li>
 </ol>
-<section id="estimating-parameters-from-23-24-data" class="level3">
-<h3 class="anchored" data-anchor-id="estimating-parameters-from-23-24-data">[1] Estimating parameters from 23-24 data</h3>
+<section id="functions" class="level3 page-columns page-full">
+<h3 class="anchored" data-anchor-id="functions">[0] Functions</h3>
+<p>These functions do the work. This first funtion fits the trends to the data, whether that is from last year (<code>in_year = FALSE</code>) or in the year (<code>in_year = TRUE</code>). For the conversion probabilities, these linear models are weighted by the inverse of the number in the denominator.<a href="#fn4" class="footnote-ref" id="fnref4" role="doc-noteref"><sup>4</sup></a></p>
+<div class="no-row-height column-margin column-container"><div id="fn4"><p><sup>4</sup>&nbsp;This can likely be improved.</p></div></div><div class="cell">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>estimate_params <span class="ot">&lt;-</span> <span class="cf">function</span>(data, <span class="at">in_year =</span> <span class="cn">FALSE</span>){</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  params <span class="ot">&lt;-</span> <span class="fu">lm</span>(data[[<span class="dv">1</span>]] <span class="sc">~</span> <span class="fu">seq</span>(<span class="dv">1</span><span class="sc">:</span><span class="fu">nrow</span>(data))) <span class="sc">|&gt;</span><span class="fu">summary</span>() <span class="sc">|&gt;</span> <span class="fu">coefficients</span>() <span class="sc">|&gt;</span> (\(.) .[,<span class="dv">1</span>])()</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (in_year <span class="sc">==</span> <span class="cn">FALSE</span>){s <span class="ot">&lt;-</span> <span class="dv">4</span>} <span class="cf">else</span> {s <span class="ot">&lt;-</span> <span class="dv">3</span>}</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span> (i <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span>s){ </span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>    ps <span class="ot">&lt;-</span> data[[i <span class="sc">+</span> <span class="dv">1</span>]] <span class="sc">/</span> data[[i]]</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>    params <span class="ot">&lt;-</span> <span class="fu">rbind</span>(params, </span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>                    <span class="fu">lm</span>(ps <span class="sc">~</span> <span class="fu">seq</span>(<span class="dv">1</span><span class="sc">:</span><span class="fu">nrow</span>(data)), <span class="at">weights=</span><span class="dv">1</span><span class="sc">/</span>(data[[i]])) <span class="sc">|&gt;</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>                      <span class="fu">summary</span>() <span class="sc">|&gt;</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>                      <span class="fu">coefficients</span>() <span class="sc">|&gt;</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>                      (\(.) .[,<span class="dv">1</span>])()) </span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (in_year <span class="sc">==</span> <span class="cn">TRUE</span>){params <span class="ot">&lt;-</span> <span class="fu">rbind</span>(params, <span class="fu">c</span>(<span class="cn">NA</span>, <span class="cn">NA</span>))}</span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">colnames</span>(params) <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"a"</span>, <span class="st">"m"</span>)</span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rownames</span>(params) <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"app"</span>, <span class="st">"p_int"</span>, <span class="st">"p_off"</span>, <span class="st">"p_acc"</span>, <span class="st">"p_sta"</span>)</span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">return</span>(params)</span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>This next function updates the parameters based on the last year only with the new in-year data. Note that the parameters relating to the probability of starting do not update since this is unknown.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Load data</span></span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>data_22_23 <span class="ot">&lt;-</span> <span class="fu">data.frame</span>()</span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>data_23_24 <span class="ot">&lt;-</span> <span class="fu">data.frame</span>()</span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="co"># Remove the first day </span></span>
-<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Collapse by week of application</span></span>
-<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>  <span class="co"># For each week of application: </span></span>
-<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>  <span class="co"># number of applicants, interviews, offers, acceptances, starts </span></span>
-<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a><span class="co"># Probabilities each week, fit models, and extract parameters </span></span>
-<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a><span class="co"># Plot the trends </span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>update_params <span class="ot">&lt;-</span> <span class="cf">function</span>(w, priors, new_data){</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  in_year_params <span class="ot">&lt;-</span> <span class="fu">estimate_params</span>(new_data, <span class="at">in_year =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  post <span class="ot">&lt;-</span> <span class="fu">mapply</span>(<span class="cf">function</span>(x, y){<span class="fu">sum</span>(x <span class="sc">*</span> w, y, <span class="at">na.rm =</span> T)<span class="sc">/</span>(w<span class="sc">+</span><span class="dv">1</span>)}, </span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>                 <span class="at">x =</span> priors[<span class="dv">1</span><span class="sc">:</span><span class="dv">4</span>,], <span class="at">y =</span> in_year_params[<span class="dv">1</span><span class="sc">:</span><span class="dv">4</span>,])</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>  post <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(post[<span class="dv">1</span><span class="sc">:</span><span class="dv">4</span>], post[<span class="dv">5</span><span class="sc">:</span><span class="dv">8</span>])</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>  post <span class="ot">&lt;-</span> <span class="fu">rbind</span>(post, priors[<span class="dv">5</span>, ])</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">colnames</span>(post) <span class="ot">&lt;-</span> <span class="fu">colnames</span>(priors)</span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rownames</span>(post) <span class="ot">&lt;-</span> <span class="fu">rownames</span>(priors)</span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">return</span>(post)</span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Finally, this function returns the monthly modelled numbers (where p = params/prior/posterior).<a href="#fn5" class="footnote-ref" id="fnref5" role="doc-noteref"><sup>5</sup></a></p>
+<div class="no-row-height column-margin column-container"><div id="fn5"><p><sup>5</sup>&nbsp;Compartmental model, with <span class="math inline">\(a\)</span> and <span class="math inline">\(m\)</span> as intervept and slope, respectively: <span class="math display">\[N^{app}_t = a_1 + Months*m_1\]</span> <span class="math display">\[N^{int}_t = N_{t}^{App} * (a_2 + Months*m_2)\]</span> <span class="math display">\[N^{off}_t = N_{t}^{int} *(a_3 + Months*m_3)\]</span> <span class="math display">\[N^{acc}_t = N_{t}^{off} *(a_4 + Months*m_4)\]</span> <span class="math display">\[N^{sta}_t = N_{t}^{acc} *(a_5 + Months*m_5)\]</span></p></div></div><div class="cell">
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>monthly_modelled <span class="ot">&lt;-</span> <span class="cf">function</span>(month, p){</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  app_t <span class="ot">&lt;-</span>        p[<span class="dv">1</span>, <span class="dv">1</span>] <span class="sc">+</span> month <span class="sc">*</span> p[<span class="dv">1</span>, <span class="dv">2</span>]</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  int_t <span class="ot">&lt;-</span> app_t<span class="sc">*</span>(p[<span class="dv">2</span>, <span class="dv">1</span>] <span class="sc">+</span> month <span class="sc">*</span> p[<span class="dv">2</span>, <span class="dv">2</span>])</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>  off_t <span class="ot">&lt;-</span> int_t<span class="sc">*</span>(p[<span class="dv">3</span>, <span class="dv">1</span>] <span class="sc">+</span> month <span class="sc">*</span> p[<span class="dv">3</span>, <span class="dv">2</span>])</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>  acc_t <span class="ot">&lt;-</span> off_t<span class="sc">*</span>(p[<span class="dv">4</span>, <span class="dv">1</span>] <span class="sc">+</span> month <span class="sc">*</span> p[<span class="dv">4</span>, <span class="dv">2</span>])</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>  sta_t <span class="ot">&lt;-</span> acc_t<span class="sc">*</span>(p[<span class="dv">5</span>, <span class="dv">1</span>] <span class="sc">+</span> month <span class="sc">*</span> p[<span class="dv">5</span>, <span class="dv">2</span>])</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">return</span>(<span class="fu">c</span>(app_t, int_t, off_t, acc_t, sta_t))</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Which can be used in the following way to get the total starters over the ten months:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="dv">0</span><span class="sc">:</span><span class="dv">9</span> <span class="sc">|&gt;</span> <span class="fu">monthly_modelled</span>(priors) <span class="sc">|&gt;</span> (\(.) .[<span class="dv">41</span><span class="sc">:</span><span class="dv">50</span>])() <span class="sc">|&gt;</span> <span class="fu">sum</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 </section>
-<section id="determining-optimal-weights" class="level3">
-<h3 class="anchored" data-anchor-id="determining-optimal-weights">[2] Determining optimal weights</h3>
+<section id="determining-optimal-weights" class="level3 page-columns page-full">
+<h3 class="anchored" data-anchor-id="determining-optimal-weights">[1] Determining optimal weights</h3>
+<p>For this we first need to establish the parameters that were developed from the 22-23 data. These are directly coded below.</p>
+<div class="cell page-columns page-full">
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>params_22_23 <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">app =</span> <span class="fu">c</span>(<span class="at">a =</span> <span class="dv">600</span>, <span class="at">m =</span> <span class="dv">50</span>),</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">p_int =</span> <span class="fu">c</span>(<span class="at">a =</span> <span class="fl">0.8</span>, <span class="at">m =</span> <span class="sc">-</span><span class="fl">0.02</span>),</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">p_off =</span> <span class="fu">c</span>(<span class="at">a =</span> <span class="fl">0.8</span>, <span class="at">m =</span> <span class="sc">-</span><span class="fl">0.02</span>),</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">p_acc =</span> <span class="fu">c</span>(<span class="at">a =</span> <span class="fl">0.8</span>, <span class="at">m =</span> <span class="dv">0</span>),</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">p_sta =</span> <span class="fu">c</span>(<span class="at">a =</span> <span class="fl">0.6</span>, <span class="at">m =</span> <span class="fl">0.02</span>)</span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>) <span class="sc">|&gt;</span> <span class="fu">t</span>()</span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>knitr<span class="sc">::</span><span class="fu">kable</span>(params_22_23, <span class="at">caption =</span> <span class="st">"Parameters based on data from 22-23 intake."</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+
+<div class="no-row-height column-margin column-container"><div class="cell-output-display">
+<table class="caption-top table table-sm table-striped small">
+<caption>Parameters based on data from 22-23 intake.</caption>
+<thead>
+<tr class="header">
+<th style="text-align: left;"></th>
+<th style="text-align: right;">a</th>
+<th style="text-align: right;">m</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">app</td>
+<td style="text-align: right;">600.0</td>
+<td style="text-align: right;">50.00</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">p_int</td>
+<td style="text-align: right;">0.8</td>
+<td style="text-align: right;">-0.02</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">p_off</td>
+<td style="text-align: right;">0.8</td>
+<td style="text-align: right;">-0.02</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">p_acc</td>
+<td style="text-align: right;">0.8</td>
+<td style="text-align: right;">0.00</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">p_sta</td>
+<td style="text-align: right;">0.6</td>
+<td style="text-align: right;">0.02</td>
+</tr>
+</tbody>
+</table>
+</div></div></div>
+<p>Next, we need the data from 23-24 up to the end of April.</p>
+<div class="cell page-columns page-full">
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>data_23_24_April <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">app =</span> <span class="fu">c</span>(<span class="dv">545</span>, <span class="dv">284</span>, <span class="dv">199</span>, <span class="dv">303</span>, <span class="dv">412</span>, <span class="dv">407</span>, <span class="dv">465</span>),</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">int =</span> <span class="fu">c</span>(<span class="dv">115</span>, <span class="dv">350</span>, <span class="dv">141</span>, <span class="dv">194</span>, <span class="dv">203</span>, <span class="dv">239</span>, <span class="dv">246</span>),</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">off =</span> <span class="fu">c</span>( <span class="dv">178</span>, <span class="dv">74</span>, <span class="dv">49</span>, <span class="dv">92</span>, <span class="dv">104</span>, <span class="dv">73</span>, <span class="dv">88</span>),</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">acc =</span> <span class="fu">c</span>(<span class="dv">122</span>, <span class="dv">60</span>, <span class="dv">22</span>, <span class="dv">75</span>, <span class="dv">97</span>, <span class="dv">52</span>, <span class="dv">88</span>),</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">sta =</span> <span class="fu">c</span>(<span class="cn">NA</span>, <span class="cn">NA</span>, <span class="cn">NA</span>, <span class="cn">NA</span>, <span class="cn">NA</span>, <span class="cn">NA</span>, <span class="cn">NA</span>)</span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>knitr<span class="sc">::</span><span class="fu">kable</span>(data_23_24_April, <span class="at">caption =</span> <span class="st">"Data fom Oct 23 to April 24. Note there is no known data on starts since these are not observed by this point."</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+
+<div class="no-row-height column-margin column-container"><div class="cell-output-display">
+<table class="caption-top table table-sm table-striped small">
+<caption>Data fom Oct 23 to April 24. Note there is no known data on starts since these are not observed by this point.</caption>
+<thead>
+<tr class="header">
+<th style="text-align: right;">app</th>
+<th style="text-align: right;">int</th>
+<th style="text-align: right;">off</th>
+<th style="text-align: right;">acc</th>
+<th style="text-align: left;">sta</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: right;">545</td>
+<td style="text-align: right;">115</td>
+<td style="text-align: right;">178</td>
+<td style="text-align: right;">122</td>
+<td style="text-align: left;">NA</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">284</td>
+<td style="text-align: right;">350</td>
+<td style="text-align: right;">74</td>
+<td style="text-align: right;">60</td>
+<td style="text-align: left;">NA</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">199</td>
+<td style="text-align: right;">141</td>
+<td style="text-align: right;">49</td>
+<td style="text-align: right;">22</td>
+<td style="text-align: left;">NA</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">303</td>
+<td style="text-align: right;">194</td>
+<td style="text-align: right;">92</td>
+<td style="text-align: right;">75</td>
+<td style="text-align: left;">NA</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">412</td>
+<td style="text-align: right;">203</td>
+<td style="text-align: right;">104</td>
+<td style="text-align: right;">97</td>
+<td style="text-align: left;">NA</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">407</td>
+<td style="text-align: right;">239</td>
+<td style="text-align: right;">73</td>
+<td style="text-align: right;">52</td>
+<td style="text-align: left;">NA</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">465</td>
+<td style="text-align: right;">246</td>
+<td style="text-align: right;">88</td>
+<td style="text-align: right;">88</td>
+<td style="text-align: left;">NA</td>
+</tr>
+</tbody>
+</table>
+</div></div></div>
+<p>Finally we can use these to see which weights got closest to the correct answer.</p>
+<div class="cell page-columns page-full">
+<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>posteriors <span class="ot">&lt;-</span> <span class="dv">1</span><span class="sc">:</span><span class="dv">16</span> <span class="sc">|&gt;</span> <span class="fu">lapply</span>(update_params, params_22_23, data_23_24_April)</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>predictions <span class="ot">&lt;-</span> <span class="fu">lapply</span>(posteriors, <span class="cf">function</span>(X){</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>  <span class="dv">0</span><span class="sc">:</span><span class="dv">9</span> <span class="sc">|&gt;</span> <span class="fu">monthly_modelled</span>(X) <span class="sc">|&gt;</span> (\(.) .[<span class="dv">41</span><span class="sc">:</span><span class="dv">50</span>])() <span class="sc">|&gt;</span> <span class="fu">sum</span>() <span class="sc">|&gt;</span> <span class="fu">unlist</span>()</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>})</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">16</span>, predictions)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+
+<div class="no-row-height column-margin column-container"><div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="model_files/figure-html/unnamed-chunk-9-1.png" class="img-fluid figure-img" width="672"></p>
+<figcaption>Predicted starting in 2024 against the weighting for the priors.</figcaption>
+</figure>
+</div>
+</div></div></div>
+</section>
+<section id="estimating-parameters-from-23-24-data" class="level3">
+<h3 class="anchored" data-anchor-id="estimating-parameters-from-23-24-data">[2] Estimating parameters from 23-24 data</h3>
+<p>We estimate the parameters by collapsing the data within month and fitting linear models, which are shown in the functions chunk above.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Set params from 22-23 analysis (not repeated here)</span></span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>params_22_23 <span class="ot">&lt;-</span> <span class="fu">list</span>()</span>
-<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Build prediction model (N.B. 'data' is new in-year data)</span></span>
-<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>prediction_model <span class="ot">&lt;-</span> <span class="cf">function</span>(data, params, weight){</span>
-<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Use 'data' to update params </span></span>
-<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Predict for each week, number of applicants, etc.</span></span>
-<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a><span class="co"># Set to April and vary weights, plot results</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Load data</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>data_22_23 <span class="ot">&lt;-</span> <span class="fu">data.frame</span>()</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>data_23_24 <span class="ot">&lt;-</span> <span class="fu">data.frame</span>()</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a><span class="co"># Remove the first day </span></span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Collapse by month of application</span></span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>  <span class="co"># For each month of application: </span></span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>  <span class="co"># number of applicants, interviews, offers, acceptances, starts </span></span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a><span class="co"># Probabilities each month, fit models, and extract parameters </span></span>
+<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a><span class="fu">estimate_params</span>(data_23_24)</span>
+<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-14"><a href="#cb8-14" aria-hidden="true" tabindex="-1"></a><span class="co"># Plot the trends with the data</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 </section>
 <section id="prediction-model-for-24-25" class="level3">
 <h3 class="anchored" data-anchor-id="prediction-model-for-24-25">[3] Prediction model for 24-25</h3>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Load data from 24-25 intake</span></span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>data_24_25 <span class="ot">&lt;-</span> <span class="fu">data.frame</span>()</span>
-<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Prediction</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Load Oct data from 24-25 intake</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>data_24_25 <span class="ot">&lt;-</span> <span class="fu">data.frame</span>()</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Prediction</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 </section>
+</section>
+<section id="features-to-add" class="level2">
+<h2 class="anchored" data-anchor-id="features-to-add">Features to add</h2>
+<ol type="1">
+<li>Handling multiple applications from the same person</li>
+<li>Seasonality</li>
+<li>Integrate into Power BI / Dynamics</li>
+<li>Serrated cascade plot</li>
+</ol>
 </section>
 
 
