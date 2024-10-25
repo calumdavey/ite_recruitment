@@ -1,0 +1,71 @@
+---
+title: "ITE Recruitment model"
+format:
+  html:
+    grid:
+      margin-width: 350px
+  pdf: default
+reference-location: margin
+citation-location: margin
+---
+
+## Loading the data
+
+The data we use will come from a cleaned cut of the data from 23-24, and a monthly pull from the dashboard in Power BI.^[In future we may want to build this model directly inside of the Power BI workflow].
+
+```{r}
+#| echo: false
+
+
+```
+
+## Defining the model 
+
+The model assumes that everyone who applies to the NIoT passes enters into a cohort with binary – probabilistic – transitions through a series of gates: being invited to interview, being offered a place, and starting on the course. At each gate, the applicant can either continue to the next gate or drop out of the process entirely; there is no way back into the process once someone has dropped out.
+
+The probabilities of passing through a gate are fixed for all candidates irrespective of personal characteristics.^[In previous analysis we have looked at how these differ by EAL status, and could add this feature to the model in future.]. However, the probabilities are expected to change linearly through the year. Therefore, the five probabilities (i.e., application, interview, offer, accept, start) are defined by two parameters: an intercept and a slope.
+
+The ten parameters underlying the model are determined using data from the previous year, and updated using monthly data as it accrues in year. The weighting of in-year data (or more accurately, the weights given to the past year's data) is determined based on the weights that gave the most accurate estimate in the previous year's prediction in April.^[This could be improved; there is surely a model that learns how good the previous data is given the new data.]
+
+The model building takes three steps:
+
+1.  Estimating the parameters underlying the probabilities from 23-24 data.
+2.  Determining the optimal weights using a 23-24-prediction model imagined from April 2024.
+3.  Building a prediction model for 24-25 that incorporates new data as it arises.
+
+### [1] Estimating parameters from 23-24 data 
+
+```{r}
+#| echo: true
+# Load data
+
+# Remove the first day 
+
+# Collapse by week of application
+#  For each week of application: number of applicants, interviews, offers, acceptances, starts 
+
+# Probabilities each week, fit model and extract parameters 
+
+```
+
+### [2] Determining optimal weights 
+
+```{r}
+#| echo: true
+# Set weights from 22-23 analysis (not repeated here)
+
+# Build prediction model 
+
+# Set to April and vary weights, plot results 
+
+```
+
+### [3] Prediction model for 24-25 
+
+```{r}
+#| echo: true
+
+# Load data from 24-25 intake
+
+# Prediction
+```
