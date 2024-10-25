@@ -21,7 +21,7 @@ The data we use will come from a cleaned cut of the data from 23-24, and a month
 
 ## Defining the model 
 
-The model assumes that everyone who applies to the NIoT passes enters into a cohort with binary – probabilistic – transitions through a series of gates: being invited to interview, being offered a place, and starting on the course. At each gate, the applicant can either continue to the next gate or drop out of the process entirely; there is no way back into the process once someone has dropped out.
+The model assumes that everyone who applies to the NIoT passes enters into a cohort with binary – probabilistic – transitions through a series of gates: being invited to interview, being offered a place, accepting the place, and starting on the course. At each gate, the applicant can either continue to the next gate or drop out of the process entirely; there is no way back into the process once someone has dropped out.
 
 The probabilities of passing through a gate are fixed for all candidates irrespective of personal characteristics.^[In previous analysis we have looked at how these differ by EAL status, and could add this feature to the model in future.]. However, the probabilities are expected to change linearly through the year. Therefore, the five probabilities (i.e., application, interview, offer, accept, start) are defined by two parameters: an intercept and a slope.
 
